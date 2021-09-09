@@ -23,7 +23,7 @@ export class EpamDiplomaStack extends cdk.Stack {
         let ddbTable = new Table(this, `dynamodbResource${swResource.toUpperCase()}`, {
           partitionKey: {
             name: 'id',
-            type: AttributeType.NUMBER,
+            type: AttributeType.STRING,
           },
           sortKey: {
             name: 'name',
@@ -38,11 +38,11 @@ export class EpamDiplomaStack extends cdk.Stack {
         let ddbWookieeTable = new Table(this, `dynamodbResourceWookiee${swResource.toUpperCase()}`, {
           partitionKey: {
             name: 'id',
-            type: AttributeType.NUMBER,
+            type: AttributeType.STRING,
           },
           sortKey: {
             name: 'origId',
-            type: AttributeType.NUMBER,
+            type: AttributeType.STRING,
           },
           readCapacity: 2,
           writeCapacity: 2,
@@ -58,6 +58,8 @@ export class EpamDiplomaStack extends cdk.Stack {
           timeout: cdk.Duration.seconds(10),
           environment: {
             "starWarsResourceUrl": starWarsResourceList[swResource],
+            "ddbOrigTableName": ddbTable.tableName,
+            "ddbWookieeTableName": ddbWookieeTable.tableName,
           },
         });
         ddbWookieeTable.grantReadWriteData(lambdaFunction);
