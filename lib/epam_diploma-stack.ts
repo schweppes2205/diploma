@@ -1,39 +1,68 @@
-import * as lambda from '@aws-cdk/aws-lambda';
+import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
 import * as cdk from '@aws-cdk/core';
-import * as dynamo from '@aws-cdk/aws-dynamodb';
+import { Table, AttributeType } from '@aws-cdk/aws-dynamodb';
+import { booleanToCloudFormation } from '@aws-cdk/core';
+import fetch from 'node-fetch';
 
 
 export class EpamDiplomaStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    let sharedTalbeProp: dynamo.TableProps = {
-      partitionKey: {
-        name: 'id',
-        type: dynamo.AttributeType.STRING
-      },
-      readCapacity: 2,
-      writeCapacity: 2,
-    };
-    const dynamoResourcePeople = new dynamo.Table(this, 'dynamoResourcePeople', sharedTalbeProp);
-    const dynamoResourceFilms = new dynamo.Table(this, 'dynamoResourceFilms', sharedTalbeProp);
-    const dynamoResourcePlanets = new dynamo.Table(this, 'dynamoResourcePlanets', sharedTalbeProp);
-    const dynamoResourceSpecies = new dynamo.Table(this, 'dynamoResourceSpecies', sharedTalbeProp);
-    const dynamoResourceStarships = new dynamo.Table(this, 'dynamoResourceStarships', sharedTalbeProp);
-    const dynamoResourceVehicles = new dynamo.Table(this, 'dynamoResourceVehicles', sharedTalbeProp);
+    async function getStarWarsResourceList(url: string): Promise<string> {
+      let resp = await fetch(url);
+      let body = await resp.text();
+      return body;
+    }
 
-    const fillResourcesTables: lambda.Function = new lambda.Function(this, 'fillResourcesTables', {
-      runtime: lambda.Runtime.NODEJS_14_X,
-      handler: 'fillResourcesTables.handler',
-      code: lambda.Code.fromAsset('./lambda'),
-      timeout: cdk.Duration.seconds(10),
+    const starWarsResourceListPromise = getStarWarsResourceList('https://swapi.dev/api');
+    starWarsResourceListPromise.then((body) => {
+      let starWarsResourceList = JSON.parse(body);
+      for (let swResource in starWarsResourceList) {
+        // init a new databases. all have the same params, so there is no need to separately init them
+        let ddbTable = new Table(this, `dynamodbResource${swResource.toUpperCase()}`, {
+          partitionKey: {
+            name: 'id',
+            type: AttributeType.NUMBER,
+          },
+          sortKey: {
+            name: 'name',
+            type: AttributeType.STRING,
+          },
+          readCapacity: 2,
+          writeCapacity: 2,
+          tableName: swResource,
+          removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
+        // init a new databases for wookiee translation. all have the same params, so there is no need to separately init them
+        let ddbWookieeTable = new Table(this, `dynamodbResourceWookiee${swResource.toUpperCase()}`, {
+          partitionKey: {
+            name: 'id',
+            type: AttributeType.NUMBER,
+          },
+          sortKey: {
+            name: 'origId',
+            type: AttributeType.NUMBER,
+          },
+          readCapacity: 2,
+          writeCapacity: 2,
+          tableName: `w_${swResource}`,
+          removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
+        // init a new function
+        let lambdaFunction: Function = new Function(this, `${swResource}TableFill`, {
+          functionName: `${swResource}TableFill`,
+          runtime: Runtime.NODEJS_14_X,
+          handler: `${swResource}TableFill.handler`,
+          code: Code.fromAsset('./lambda'),
+          timeout: cdk.Duration.seconds(10),
+          environment: {
+            "starWarsResourceUrl": starWarsResourceList[swResource],
+          },
+        });
+        ddbWookieeTable.grantReadWriteData(lambdaFunction);
+        ddbTable.grantReadWriteData(lambdaFunction);
+      }
     });
-
-    dynamoResourcePeople.grantReadWriteData(fillResourcesTables);
-    dynamoResourceFilms.grantReadWriteData(fillResourcesTables);
-    dynamoResourcePlanets.grantReadWriteData(fillResourcesTables);
-    dynamoResourceSpecies.grantReadWriteData(fillResourcesTables);
-    dynamoResourceStarships.grantReadWriteData(fillResourcesTables);
-    dynamoResourceVehicles.grantReadWriteData(fillResourcesTables);
   }
 }
