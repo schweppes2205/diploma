@@ -7,7 +7,8 @@ async function putFilmRecordOrigWooTable(
     origRawData: string,
     wookieeRawData: string,
     origTableName: string,
-    wookieeTableName: string): Promise<void> {
+    wookieeTableName: string,
+): Promise<void> {
     // creating a db client
     const ddbAgent = new AWS.DynamoDB.DocumentClient();
     //generated record id for a record in original table.
@@ -34,28 +35,33 @@ async function putFilmRecordOrigWooTable(
         TableName: wookieeTableName,
         Item: wookieeRecord,
     }
+
     var originalResponce = await ddbAgent.put(origParams).promise();
     var wookieeResponce = await ddbAgent.put(wookieeParams).promise();
 }
 
-// export const handler = async (event, context) => {
-    // const allDataResourcesResponce = await fetch('https://swapi.dev/api');
-    // const allDataResourcesBody = await allDataResourcesResponce.json();
-    // for (let key in allDataResourcesBody) {
-    //     let resp = await fetch(allDataResourcesBody[key]);
-    //     let body = await resp.json();
-    //     let completeResourceData = []
-    //     while (true) {
-    //         completeResourceData.concat(body["results"]);
-    //         let lastBody = body;
-    //         if (lastBody["next"] === null) {
-    //             break;
-    //         }
-    //         resp = await fetch(body["next"]);
-    //         body = await resp.json();
-
-    //     }
-    // }
-// }
+export const handler = async () => {
+    // first URL from environment variables;
+    let url: string = "https://swapi.dev/api/films/";
+    // let url: string = process.env.starWarsResourceUrl;
+    // gathering all films into a single array
+    let allFilmsList: any[] = [];
+    // the paging loop
+    do {
+        let allFilmsResponce = await fetch(url)
+        let allFilmsBody = await allFilmsResponce.json();
+        allFilmsList = allFilmsList.concat(allFilmsBody["results"]);
+        url = allFilmsBody["next"]
+    }
+    while (url !== null);
+    for (let i = 0; i < allFilmsList.length; i++) {
+        let url = `${allFilmsList[i]['url']}?format=wookiee`
+        let wookieeFilmResponce = await fetch(url);
+        let wookieeFilmBodyOrig = await wookieeFilmResponce.text();
+        let regex = /\\rc\\w/gm;
+        let wookieeFilmBodyFixed = wookieeFilmBodyOrig.replace(regex, "\\r\\n");
+        putFilmRecordOrigWooTable(JSON.stringify(allFilmsList[i]), wookieeFilmBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+    }
+}
 
 // handler();

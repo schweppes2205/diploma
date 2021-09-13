@@ -53,7 +53,7 @@ export class EpamDiplomaStack extends cdk.Stack {
         let lambdaFunction: Function = new Function(this, `${swResource}TableFill`, {
           functionName: `${swResource}TableFill`,
           runtime: Runtime.NODEJS_14_X,
-          handler: `${swResource}TableFill.handler`,
+          handler: `${swResource}TableFill/${swResource}TableFill.handler`,
           code: Code.fromAsset('./lambda'),
           timeout: cdk.Duration.seconds(10),
           environment: {
