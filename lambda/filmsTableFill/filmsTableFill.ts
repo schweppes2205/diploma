@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
-import { origFilmResourceScheme, wookieeFilmResourceScheme } from "../../interfaces/filmInterface";
+import { origFilmResourceScheme, wookieeFilmResourceScheme } from "../../interfaces/InterfacesAll";
 import { v1 } from 'node-uuid';
 
 async function putFilmRecordOrigWooTable(
@@ -13,24 +13,20 @@ async function putFilmRecordOrigWooTable(
     const ddbAgent = new AWS.DynamoDB.DocumentClient();
     //generated record id for a record in original table.
     // will be used as search key in wookiee table
-    const origRecordId = v1();
+    const recordId = v1();
     // parsing input and creating a db record for original table
     let origRecord: origFilmResourceScheme = JSON.parse(origRawData);
     // film doesn't have name it's a title, but we need all tables to 
     // have the same structure to make a standard request functions
     origRecord.name = JSON.parse(origRawData)["title"];
-    origRecord.id = origRecordId;
+    origRecord.id = recordId;
     var origParams = {
         TableName: origTableName,
         Item: origRecord,
     }
-    // wookiee table record id
-    const wookieeRecordId = v1();
     // parsing input for wookiee table record with according interface
     let wookieeRecord: wookieeFilmResourceScheme = JSON.parse(wookieeRawData);
-    wookieeRecord.id = wookieeRecordId;
-    // using original record id as search index for the record
-    wookieeRecord.origId = origRecordId;
+    wookieeRecord.id = recordId;
     let wookieeParams = {
         TableName: wookieeTableName,
         Item: wookieeRecord,
@@ -42,8 +38,8 @@ async function putFilmRecordOrigWooTable(
 
 export const handler = async () => {
     // first URL from environment variables;
-    let url: string = "https://swapi.dev/api/films/";
-    // let url: string = process.env.starWarsResourceUrl;
+    // let url: string = "https://swapi.dev/api/films/";
+    let url: string = process.env.starWarsResourceUrl;
     // gathering all films into a single array
     let allFilmsList: any[] = [];
     // the paging loop

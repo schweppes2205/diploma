@@ -22,13 +22,13 @@ export class EpamDiplomaStack extends cdk.Stack {
         // init a new databases. all have the same params, so there is no need to separately init them
         let ddbTable = new Table(this, `dynamodbResource${swResource.toUpperCase()}`, {
           partitionKey: {
-            name: 'id',
-            type: AttributeType.STRING,
-          },
-          sortKey: {
             name: 'name',
             type: AttributeType.STRING,
           },
+          // sortKey: {
+          //   name: 'name',
+          //   type: AttributeType.STRING,
+          // },
           readCapacity: 2,
           writeCapacity: 2,
           tableName: swResource,
@@ -40,10 +40,10 @@ export class EpamDiplomaStack extends cdk.Stack {
             name: 'id',
             type: AttributeType.STRING,
           },
-          sortKey: {
-            name: 'origId',
-            type: AttributeType.STRING,
-          },
+          // sortKey: {
+          //   name: 'origId',
+          //   type: AttributeType.STRING,
+          // },
           readCapacity: 2,
           writeCapacity: 2,
           tableName: `w_${swResource}`,

@@ -1,8 +1,10 @@
 {
-  "dependencies": {
-    "node-fetch": "^2.6.1"
-  },
-  "devDependencies": {
-    "@types/node-fetch": "^2.5.12"
-  }
+    "dependencies": {
+        "node-fetch": "^2.6.1",
+        "node-uuid": "^1.4.8"
+    },
+    "devDependencies": {
+        "@types/node-fetch": "^2.5.12",
+        "@types/node-uuid": "0.0.29"
+    }
 }
