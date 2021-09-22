@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
 import { origVehiclesResourceScheme, wookieeVehiclesResourceScheme } from "../../interfaces/InterfacesAll";
 import { v1 } from 'node-uuid';
+import { RestApiResponse } from "../../helper/restApiResponse"
 
 async function putVehiclesRecordOrigWooTable(
     origRawData: string,
@@ -42,21 +43,34 @@ export const handler = async () => {
     // gathering all films into a single array
     let allVehiclesList: any[] = [];
     // the paging loop
-    do {
-        let allVehiclesResponce = await fetch(url)
-        let allVehiclesBody = await allVehiclesResponce.json();
-        allVehiclesList = allVehiclesList.concat(allVehiclesBody["results"]);
-        url = allVehiclesBody["next"]
+    try {
+        do {
+            let allVehiclesResponce = await fetch(url)
+            let allVehiclesBody = await allVehiclesResponce.json();
+            allVehiclesList = allVehiclesList.concat(allVehiclesBody["results"]);
+            url = allVehiclesBody["next"]
+        }
+        while (url !== null);
+    } catch (_err) {
+        let errorStr = `Error during paging vehicles. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
-    while (url !== null);
-    for (let i = 0; i < allVehiclesList.length; i++) {
-        let url = `${allVehiclesList[i]['url']}?format=wookiee`
-        let wookieeVehiclesResponce = await fetch(url);
-        let wookieeVehiclesBodyOrig = await wookieeVehiclesResponce.text();
-        let regex = /\\rc\\w/gm;
-        let wookieeVehiclesBodyFixed = wookieeVehiclesBodyOrig.replace(regex, "\\r\\n");
-        putVehiclesRecordOrigWooTable(JSON.stringify(allVehiclesList[i]), wookieeVehiclesBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+    try {
+        for (let i = 0; i < allVehiclesList.length; i++) {
+            let url = `${allVehiclesList[i]['url']}?format=wookiee`
+            let wookieeVehiclesResponce = await fetch(url);
+            let wookieeVehiclesBodyOrig = await wookieeVehiclesResponce.text();
+            let regex = /\\rc\\w/gm;
+            let wookieeVehiclesBodyFixed = wookieeVehiclesBodyOrig.replace(regex, "\\r\\n");
+            putVehiclesRecordOrigWooTable(JSON.stringify(allVehiclesList[i]), wookieeVehiclesBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+        }
+    } catch (_err) {
+        let errorStr = `Error during DynamoDB filling. Vehicles db. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
+    return new RestApiResponse("200", "Success");
 }
 
 // handler();

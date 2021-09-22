@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
 import { origStarshipResourceScheme, wookieeStarshipResourceScheme } from "../../interfaces/InterfacesAll";
 import { v1 } from 'node-uuid';
+import { RestApiResponse } from "../../helper/restApiResponse"
 
 async function putStarshipRecordOrigWooTable(
     origRawData: string,
@@ -42,21 +43,34 @@ export const handler = async () => {
     // gathering all films into a single array
     let allStarshipList: any[] = [];
     // the paging loop
-    do {
-        let allStarshipResponce = await fetch(url)
-        let allStarshipBody = await allStarshipResponce.json();
-        allStarshipList = allStarshipList.concat(allStarshipBody["results"]);
-        url = allStarshipBody["next"]
+    try {
+        do {
+            let allStarshipResponce = await fetch(url)
+            let allStarshipBody = await allStarshipResponce.json();
+            allStarshipList = allStarshipList.concat(allStarshipBody["results"]);
+            url = allStarshipBody["next"]
+        }
+        while (url !== null);
+    } catch (_err) {
+        let errorStr = `Error during paging starships. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
-    while (url !== null);
-    for (let i = 0; i < allStarshipList.length; i++) {
-        let url = `${allStarshipList[i]['url']}?format=wookiee`
-        let wookieeStarshipResponce = await fetch(url);
-        let wookieeStarshipBodyOrig = await wookieeStarshipResponce.text();
-        let regex = /\\rc\\w/gm;
-        let wookieeStarshipBodyFixed = wookieeStarshipBodyOrig.replace(regex, "\\r\\n");
-        putStarshipRecordOrigWooTable(JSON.stringify(allStarshipList[i]), wookieeStarshipBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+    try {
+        for (let i = 0; i < allStarshipList.length; i++) {
+            let url = `${allStarshipList[i]['url']}?format=wookiee`
+            let wookieeStarshipResponce = await fetch(url);
+            let wookieeStarshipBodyOrig = await wookieeStarshipResponce.text();
+            let regex = /\\rc\\w/gm;
+            let wookieeStarshipBodyFixed = wookieeStarshipBodyOrig.replace(regex, "\\r\\n");
+            putStarshipRecordOrigWooTable(JSON.stringify(allStarshipList[i]), wookieeStarshipBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+        }
+    } catch (_err) {
+        let errorStr = `Error during DynamoDB filling. Starships db. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
+    return new RestApiResponse("200", "Success");
 }
 
 // handler();

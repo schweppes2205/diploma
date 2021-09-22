@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
 import { origFilmResourceScheme, wookieeFilmResourceScheme } from "../../interfaces/InterfacesAll";
 import { v1 } from 'node-uuid';
+import { RestApiResponse } from "../../helper/restApiResponse"
 
 async function putFilmRecordOrigWooTable(
     origRawData: string,
@@ -43,21 +44,34 @@ export const handler = async () => {
     // gathering all films into a single array
     let allFilmsList: any[] = [];
     // the paging loop
-    do {
-        let allFilmsResponce = await fetch(url)
-        let allFilmsBody = await allFilmsResponce.json();
-        allFilmsList = allFilmsList.concat(allFilmsBody["results"]);
-        url = allFilmsBody["next"]
+    try {
+        do {
+            let allFilmsResponce = await fetch(url)
+            let allFilmsBody = await allFilmsResponce.json();
+            allFilmsList = allFilmsList.concat(allFilmsBody["results"]);
+            url = allFilmsBody["next"]
+        }
+        while (url !== null);
+    } catch (_err) {
+        let errorStr = `Error during paging films. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
-    while (url !== null);
-    for (let i = 0; i < allFilmsList.length; i++) {
-        let url = `${allFilmsList[i]['url']}?format=wookiee`
-        let wookieeFilmResponce = await fetch(url);
-        let wookieeFilmBodyOrig = await wookieeFilmResponce.text();
-        let regex = /\\rc\\w/gm;
-        let wookieeFilmBodyFixed = wookieeFilmBodyOrig.replace(regex, "\\r\\n");
-        putFilmRecordOrigWooTable(JSON.stringify(allFilmsList[i]), wookieeFilmBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+    try {
+        for (let i = 0; i < allFilmsList.length; i++) {
+            let url = `${allFilmsList[i]['url']}?format=wookiee`
+            let wookieeFilmResponce = await fetch(url);
+            let wookieeFilmBodyOrig = await wookieeFilmResponce.text();
+            let regex = /\\rc\\w/gm;
+            let wookieeFilmBodyFixed = wookieeFilmBodyOrig.replace(regex, "\\r\\n");
+            putFilmRecordOrigWooTable(JSON.stringify(allFilmsList[i]), wookieeFilmBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+        }
+    } catch (_err) {
+        let errorStr = `Error during DynamoDB filling. Films db. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
+    return new RestApiResponse("200", "Success");
 }
 
 // handler();

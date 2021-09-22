@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
 import { origSpeciesResourceScheme, wookieeSpeciesResourceScheme } from "../../interfaces/InterfacesAll";
 import { v1 } from 'node-uuid';
+import { RestApiResponse } from "../../helper/restApiResponse"
 
 async function putSpeciesRecordOrigWooTable(
     origRawData: string,
@@ -42,21 +43,34 @@ export const handler = async () => {
     // gathering all films into a single array
     let allSpeciesList: any[] = [];
     // the paging loop
-    do {
-        let allSpeciesResponce = await fetch(url)
-        let allSpeciesBody = await allSpeciesResponce.json();
-        allSpeciesList = allSpeciesList.concat(allSpeciesBody["results"]);
-        url = allSpeciesBody["next"]
+    try {
+        do {
+            let allSpeciesResponce = await fetch(url)
+            let allSpeciesBody = await allSpeciesResponce.json();
+            allSpeciesList = allSpeciesList.concat(allSpeciesBody["results"]);
+            url = allSpeciesBody["next"]
+        }
+        while (url !== null);
+    } catch (_err) {
+        let errorStr = `Error during paging species. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
-    while (url !== null);
-    for (let i = 0; i < allSpeciesList.length; i++) {
-        let url = `${allSpeciesList[i]['url']}?format=wookiee`
-        let wookieeSpeciesResponce = await fetch(url);
-        let wookieeSpeciesBodyOrig = await wookieeSpeciesResponce.text();
-        let regex = /\\rc\\w/gm;
-        let wookieeSpeciesBodyFixed = wookieeSpeciesBodyOrig.replace(regex, "\\r\\n");
-        putSpeciesRecordOrigWooTable(JSON.stringify(allSpeciesList[i]), wookieeSpeciesBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+    try {
+        for (let i = 0; i < allSpeciesList.length; i++) {
+            let url = `${allSpeciesList[i]['url']}?format=wookiee`
+            let wookieeSpeciesResponce = await fetch(url);
+            let wookieeSpeciesBodyOrig = await wookieeSpeciesResponce.text();
+            let regex = /\\rc\\w/gm;
+            let wookieeSpeciesBodyFixed = wookieeSpeciesBodyOrig.replace(regex, "\\r\\n");
+            putSpeciesRecordOrigWooTable(JSON.stringify(allSpeciesList[i]), wookieeSpeciesBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+        }
+    } catch (_err) {
+        let errorStr = `Error during DynamoDB filling. Species db. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
+    return new RestApiResponse("200", "Success");
 }
 
 // handler();

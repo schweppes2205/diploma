@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
 import { origPlanetsResourceScheme, wookieePlanetsResourceScheme } from "../../interfaces/InterfacesAll";
 import { v1 } from 'node-uuid';
+import { RestApiResponse } from "../../helper/restApiResponse"
 
 async function putPlanetsRecordOrigWooTable(
     origRawData: string,
@@ -42,21 +43,35 @@ export const handler = async () => {
     // gathering all films into a single array
     let allPlanetsList: any[] = [];
     // the paging loop
-    do {
-        let allPlanetsResponce = await fetch(url)
-        let allPlanetsBody = await allPlanetsResponce.json();
-        allPlanetsList = allPlanetsList.concat(allPlanetsBody["results"]);
-        url = allPlanetsBody["next"]
+    try {
+        do {
+            let allPlanetsResponce = await fetch(url)
+            let allPlanetsBody = await allPlanetsResponce.json();
+            allPlanetsList = allPlanetsList.concat(allPlanetsBody["results"]);
+            url = allPlanetsBody["next"]
+        }
+        while (url !== null);
+    } catch (_err) {
+        let errorStr = `Error during paging planets. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
-    while (url !== null);
-    for (let i = 0; i < allPlanetsList.length; i++) {
-        let url = `${allPlanetsList[i]['url']}?format=wookiee`
-        let wookieePlanetsResponce = await fetch(url);
-        let wookieePlanetsBodyOrig = await wookieePlanetsResponce.text();
-        let regex = /\\rc\\w/gm;
-        let wookieePlanetsBodyFixed = wookieePlanetsBodyOrig.replace(regex, "\\r\\n");
-        putPlanetsRecordOrigWooTable(JSON.stringify(allPlanetsList[i]), wookieePlanetsBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+    try {
+        for (let i = 0; i < allPlanetsList.length; i++) {
+            let url = `${allPlanetsList[i]['url']}?format=wookiee`
+            let wookieePlanetsResponce = await fetch(url);
+            let wookieePlanetsBodyOrig = await wookieePlanetsResponce.text();
+            let regex = /\\rc\\w/gm;
+            let wookieePlanetsBodyFixed = wookieePlanetsBodyOrig.replace(regex, "\\r\\n");
+            putPlanetsRecordOrigWooTable(JSON.stringify(allPlanetsList[i]), wookieePlanetsBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+        }
+    } catch (_err) {
+        let errorStr = `Error during DynamoDB filling. Planets db. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
+    return new RestApiResponse("200", "Success");
+
 }
 
 // handler();

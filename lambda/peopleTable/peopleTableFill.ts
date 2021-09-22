@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
 import { origPeopleResourceScheme, wookieePeopleResourceScheme } from "../../interfaces/InterfacesAll";
 import { v1 } from 'node-uuid';
+import { RestApiResponse } from "../../helper/restApiResponse"
 
 async function putPeopleRecordOrigWooTable(
     origRawData: string,
@@ -42,21 +43,34 @@ export const handler = async () => {
     // gathering all films into a single array
     let allPeopleList: any[] = [];
     // the paging loop
-    do {
-        let allPeopleResponce = await fetch(url)
-        let allPeopleBody = await allPeopleResponce.json();
-        allPeopleList = allPeopleList.concat(allPeopleBody["results"]);
-        url = allPeopleBody["next"]
+    try {
+        do {
+            let allPeopleResponce = await fetch(url)
+            let allPeopleBody = await allPeopleResponce.json();
+            allPeopleList = allPeopleList.concat(allPeopleBody["results"]);
+            url = allPeopleBody["next"]
+        }
+        while (url !== null);
+    } catch (_err) {
+        let errorStr = `Error during paging people. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
-    while (url !== null);
-    for (let i = 0; i < allPeopleList.length; i++) {
-        let url = `${allPeopleList[i]['url']}?format=wookiee`
-        let wookieePeopleResponce = await fetch(url);
-        let wookieePeopleBodyOrig = await wookieePeopleResponce.text();
-        let regex = /\\rc\\w/gm;
-        let wookieePeopleBodyFixed = wookieePeopleBodyOrig.replace(regex, "\\r\\n");
-        putPeopleRecordOrigWooTable(JSON.stringify(allPeopleList[i]), wookieePeopleBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+    try {
+        for (let i = 0; i < allPeopleList.length; i++) {
+            let url = `${allPeopleList[i]['url']}?format=wookiee`
+            let wookieePeopleResponce = await fetch(url);
+            let wookieePeopleBodyOrig = await wookieePeopleResponce.text();
+            let regex = /\\rc\\w/gm;
+            let wookieePeopleBodyFixed = wookieePeopleBodyOrig.replace(regex, "\\r\\n");
+            putPeopleRecordOrigWooTable(JSON.stringify(allPeopleList[i]), wookieePeopleBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
+        }
+    } catch (_err) {
+        let errorStr = `Error during DynamoDB filling. People db. Error: ${_err}`
+        console.error(errorStr);
+        return new RestApiResponse("500", JSON.stringify(errorStr));
     }
+    return new RestApiResponse("200", "Success");
 }
 
 // handler();
