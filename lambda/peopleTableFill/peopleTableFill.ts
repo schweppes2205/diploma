@@ -1,8 +1,8 @@
 import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
-import { origPeopleResourceScheme, wookieePeopleResourceScheme } from "../../interfaces/InterfacesAll";
+import { origPeopleResourceScheme, wookieePeopleResourceScheme } from "../../interfaces/dbInterfacesAll";
 import { v1 } from 'node-uuid';
-import { RestApiResponse } from "../../helper/restApiResponse"
+import { RestApiResponse } from "./helper/restApiResponse";
 
 async function putPeopleRecordOrigWooTable(
     origRawData: string,
@@ -66,7 +66,7 @@ export const handler = async () => {
             putPeopleRecordOrigWooTable(JSON.stringify(allPeopleList[i]), wookieePeopleBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
         }
     } catch (_err) {
-        let errorStr = `Error during DynamoDB filling. People db. Error: ${_err}`
+        let errorStr = `Error during DynamoDB filling. People db. Error: ${_err}`;
         console.error(errorStr);
         return new RestApiResponse("500", JSON.stringify(errorStr));
     }

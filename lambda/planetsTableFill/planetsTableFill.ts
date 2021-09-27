@@ -1,8 +1,8 @@
 import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
-import { origPlanetsResourceScheme, wookieePlanetsResourceScheme } from "../../interfaces/InterfacesAll";
+import { origPlanetsResourceScheme, wookieePlanetsResourceScheme } from "../../interfaces/dbInterfacesAll";
 import { v1 } from 'node-uuid';
-import { RestApiResponse } from "../../helper/restApiResponse"
+import { RestApiResponse } from "./helper/restApiResponse";
 
 async function putPlanetsRecordOrigWooTable(
     origRawData: string,

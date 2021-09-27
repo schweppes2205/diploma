@@ -1,8 +1,8 @@
 import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
-import { origFilmResourceScheme, wookieeFilmResourceScheme } from "../../interfaces/InterfacesAll";
+import { origFilmResourceScheme, wookieeFilmResourceScheme } from "../../interfaces/dbInterfacesAll";
 import { v1 } from 'node-uuid';
-import { RestApiResponse } from "../../helper/restApiResponse"
+import { RestApiResponse } from "./helper/restApiResponse";
 
 async function putFilmRecordOrigWooTable(
     origRawData: string,

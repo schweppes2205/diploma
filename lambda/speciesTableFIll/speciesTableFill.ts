@@ -1,8 +1,8 @@
 import fetch from 'node-fetch';
 import * as AWS from 'aws-sdk';
-import { origSpeciesResourceScheme, wookieeSpeciesResourceScheme } from "../../interfaces/InterfacesAll";
+import { origSpeciesResourceScheme, wookieeSpeciesResourceScheme } from "../../interfaces/dbInterfacesAll";
 import { v1 } from 'node-uuid';
-import { RestApiResponse } from "../../helper/restApiResponse"
+import { RestApiResponse } from "./helper/restApiResponse";
 
 async function putSpeciesRecordOrigWooTable(
     origRawData: string,
