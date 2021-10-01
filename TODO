@@ -1,0 +1,20 @@
+[] universal for all tables GET for rest api 
+    [] record from original table by name
+        - resource name (table name)
+        - name
+    [] record from wookie by original name
+        - resource name
+        - name
+        - wookiee version bool param
+    [] all table content for original table
+    [] all table content for wookie table
+[] universal for all tables PUT for rest api 
+    [] put original record together with translate to wookiee
+    use https://www.npmjs.com/package/shyriiwook
+[] update fill table with wookiee table record creation check if the same record already exists
+should be done rignt after check if the original record exists
+[] lambda to return all resources as a root get method for REST API GW
+[] Create lambda layer for all DB creation lambdas for identical code.
+done:
+[x] remove wookiee support. way too much unexpected issues. example of fail https://swapi.dev/api/people/35/?format=wookiee
+[x] fix async calls for DB filling lambdas. work from time to time. do not know the reason.
