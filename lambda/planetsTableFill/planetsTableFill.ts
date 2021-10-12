@@ -40,7 +40,7 @@ async function putPlanetsRecordOrigWooTable(
 export const handler = async () => {
     // first URL from environment variables;
     // let url: string = "https://swapi.dev/api/films/";
-    let url: string = process.env.starWarsResourceUrl;
+    let url: string = process.env.starWarsResourceUrl!;
     console.debug(`request url: ${url}`);
     // gathering all planets into a single array
     let allPlanetsList: any[] = [];
@@ -69,7 +69,7 @@ export const handler = async () => {
         //     putPlanetsRecordOrigWooTable(JSON.stringify(allPlanetsList[i]), wookieePlanetsBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
         // }
         await Promise.all(allPlanetsList.map(async (planet) => {
-            await putPlanetsRecordOrigWooTable(JSON.stringify(planet), process.env.ddbOrigTableName);
+            await putPlanetsRecordOrigWooTable(JSON.stringify(planet), process.env.ddbOrigTableName!);
         }));
     } catch (_err) {
         let errorStr = `Error during DynamoDB filling. Planets db. Error: ${_err}`

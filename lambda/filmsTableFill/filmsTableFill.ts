@@ -46,7 +46,7 @@ async function putFilmRecordOrigWooTable(
 export const handler = async () => {
     // first URL from environment variables;
     // let url: string = "https://swapi.dev/api/films/";
-    let url: string = process.env.starWarsResourceUrl;
+    let url: string = process.env.starWarsResourceUrl!;
     console.debug(`request url: ${url}`);
     // gathering all films into a single array
     let allFilmsList: any[] = [];
@@ -77,7 +77,7 @@ export const handler = async () => {
         // }
 
         await Promise.all(allFilmsList.map(async (film) => {
-            await putFilmRecordOrigWooTable(JSON.stringify(film), process.env.ddbOrigTableName);
+            await putFilmRecordOrigWooTable(JSON.stringify(film), process.env.ddbOrigTableName!);
         }));
     } catch (_err) {
         let errorStr = `Error during DynamoDB filling. Films db. Error: ${_err}`

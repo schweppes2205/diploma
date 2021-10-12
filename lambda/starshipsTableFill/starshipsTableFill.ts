@@ -40,7 +40,7 @@ async function putStarshipRecordOrigWooTable(
 export const handler = async () => {
     // first URL from environment variables;
     // let url: string = "https://swapi.dev/api/films/";
-    let url: string = process.env.starWarsResourceUrl;
+    let url: string = process.env.starWarsResourceUrl!;
     console.debug(`request url: ${url}`);
     // gathering all starship into a single array
     let allStarshipList: any[] = [];
@@ -69,7 +69,7 @@ export const handler = async () => {
         //     putStarshipRecordOrigWooTable(JSON.stringify(allStarshipList[i]), wookieeStarshipBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
         // }
         await Promise.all(allStarshipList.map(async (starship) => {
-            await putStarshipRecordOrigWooTable(JSON.stringify(starship), process.env.ddbOrigTableName);
+            await putStarshipRecordOrigWooTable(JSON.stringify(starship), process.env.ddbOrigTableName!);
         }));
     } catch (_err) {
         let errorStr = `Error during DynamoDB filling. Starships db. Error: ${_err}`

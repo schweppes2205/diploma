@@ -23,7 +23,7 @@ export class EpamDiplomaStack extends cdk.Stack {
 
     // object to store all lambda and their according resource names. will be used next to create 
     // an AWS REST API GW
-    let lambdaFuncArr: LambdaOrganizerHelper[] = [];
+    let lambdaFuncArr = [] as LambdaOrganizerHelper[];
     // retrieving all resources from remote server
     const starWarsResourceListPromise = getStarWarsResourceList('https://swapi.dev/api');
     starWarsResourceListPromise.then((body) => {
@@ -36,7 +36,15 @@ export class EpamDiplomaStack extends cdk.Stack {
         handler: 'getRecord/getRecord.handler',
         timeout: cdk.Duration.seconds(10),
       });
-      lambdaFuncArr.push(new LambdaOrganizerHelper("anyResource", getRecordLambda, 'GET'));
+
+      // create a universal put method for a new record creation to any db.
+      const putRecordLambda: Function = new Function(this, "putRecord", {
+        functionName: "putRecordLambda",
+        runtime: Runtime.NODEJS_14_X,
+        code: Code.fromAsset('./lambda/putRecord'),
+        handler: 'putRecord/putRecord.handler',
+        timeout: cdk.Duration.seconds(10),
+      });
 
       let starWarsResourceList = JSON.parse(body);
       // running through all of them one by one
@@ -94,6 +102,8 @@ export class EpamDiplomaStack extends cdk.Stack {
         // ddbWookieeTable.grantWriteData(fillDdbLambdaFunction);
         ddbTable.grantReadData(getRecordLambda);
         // ddbWookieeTable.grantReadData(getRecordLambda);
+        ddbTable.grantWriteData(putRecordLambda);
+        // ddbWookieeTable.grantWriteData(putRecordLambda);
       }
 
       // create a rest API GW with lambdas as background.
@@ -107,6 +117,12 @@ export class EpamDiplomaStack extends cdk.Stack {
         let newResource = restApiFillDdbLambdaBackend.root.addResource(lambdaOrg.resName);
         newResource.addMethod(lambdaOrg.restMethod, lambdaFuncIntegration);
       });
+      // adding get and put methods separately
+      let lambdaFuncIntegration = new LambdaIntegration(getRecordLambda);
+      let newResource = restApiFillDdbLambdaBackend.root.addResource("anyResource");
+      newResource.addMethod("GET", lambdaFuncIntegration);
+      lambdaFuncIntegration = new LambdaIntegration(putRecordLambda);
+      newResource.addMethod("PUT", lambdaFuncIntegration);
     });
   }
 }

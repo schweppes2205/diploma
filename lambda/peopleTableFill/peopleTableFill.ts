@@ -44,7 +44,7 @@ async function putPeopleRecordOrigWooTable(
 export const handler = async () => {
     // first URL from environment variables;
     // let url: string = "https://swapi.dev/api/people/";
-    let url: string = process.env.starWarsResourceUrl;
+    let url: string = process.env.starWarsResourceUrl!;
     console.log(`request url: ${url}`);
     // gathering all kinds into a single array
     let allPeopleList: any[] = [];
@@ -74,7 +74,7 @@ export const handler = async () => {
         //     // putPeopleRecordOrigWooTable(JSON.stringify(allPeopleList[i]), wookieePeopleBodyFixed, process.env.ddbOrigTableName, process.env.ddbWookieeTableName);
         // }
         await Promise.all(allPeopleList.map(async (kind) => {
-            await putPeopleRecordOrigWooTable(JSON.stringify(kind), process.env.ddbOrigTableName);
+            await putPeopleRecordOrigWooTable(JSON.stringify(kind), process.env.ddbOrigTableName!);
         }));
     } catch (_err) {
         let errorStr = `Error during DynamoDB filling. People db. Error: ${_err}`;
