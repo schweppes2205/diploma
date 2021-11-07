@@ -95,7 +95,7 @@ export class EpamDiplomaStack extends cdk.Stack {
         });
 
         // placing that function to array organizer
-        lambdaFuncArr.push(new LambdaOrganizerHelper(swResource, fillDdbLambdaFunction, 'PATCH'));
+        lambdaFuncArr.push(new LambdaOrganizerHelper(swResource, fillDdbLambdaFunction, 'GET'));
 
         // providing the lambdas the write only access.
         ddbTable.grantWriteData(fillDdbLambdaFunction);
