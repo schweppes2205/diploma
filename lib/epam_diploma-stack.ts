@@ -2,7 +2,7 @@ import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
 import * as cdk from '@aws-cdk/core';
 import { Table, AttributeType, TableProps } from '@aws-cdk/aws-dynamodb';
 import fetch from 'node-fetch';
-import { LambdaIntegration, RestApi } from '@aws-cdk/aws-apigateway'
+import { LambdaIntegration, RestApi, Cors } from '@aws-cdk/aws-apigateway'
 
 // a tiny helper that will help us store a function and according resource name.
 // Next it will be used to create API GW with according resource names and lambdas on backend.
@@ -108,7 +108,10 @@ export class EpamDiplomaStack extends cdk.Stack {
 
       // create a rest API GW with lambdas as background.
       const restApiFillDdbLambdaBackend = new RestApi(this, "restApiFillDdbLambdaBackend", {
-        restApiName: "restApiFillDdbLambdaBackend"
+        restApiName: "restApiFillDdbLambdaBackend",
+        defaultCorsPreflightOptions: {
+          allowOrigins: Cors.ALL_ORIGINS,
+        }
       });
 
       // adding all lambdas to REST API GW
